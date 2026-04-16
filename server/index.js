@@ -51,7 +51,7 @@ app.post('/upload/pdf', upload.single('pdf'), async (req, res) => {
 });
 
 app.get('/chat', async (req, res) => {
-  const userQuery = 'which technologies were used in creating the project ?';
+  const userQuery = req.query.message;
 
   const embeddings = new OpenAIEmbeddings({
     model: 'text-embedding-3-small',

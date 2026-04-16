@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} dark bg-background text-foreground antialiased`}>
         <ClerkProvider>
           <Show when="signed-out">
             <main className="min-h-screen flex items-center justify-center p-6">
