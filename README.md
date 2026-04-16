@@ -1,33 +1,32 @@
 # PDF RAG
 
-I built this project to chat with PDFs using retrieval-augmented generation (RAG).  
-I upload a PDF, index it in the background, and then ask questions that are answered from the document context.
+PDF RAG is a full-stack project for chatting with PDF documents using retrieval-augmented generation (RAG).
+
+A PDF is uploaded, indexed in the background, and then used as context for question answering.
 
 ## Summary
 
-This is my full-stack PDF chat prototype.
+This is a PDF chat prototype with a separate client, API server, and background worker.
 
-- I use a Next.js client for upload + chat.
-- I use an Express server for APIs.
-- I use a worker to process PDFs and store vectors.
-- I use Qdrant + OpenAI to retrieve context and generate answers.
+- Next.js client for upload and chat UI.
+- Express server for upload and chat endpoints.
+- BullMQ worker for background PDF processing.
+- Qdrant + OpenAI for retrieval and answer generation.
 
-Main outcome: I can ask questions and get answers grounded in my uploaded PDF content.
+Main outcome: questions are answered using relevant content from uploaded PDFs.
 
 ## Tech Stack
 
-![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
-![React](https://img.shields.io/badge/React-19-20232A?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
-![Clerk](https://img.shields.io/badge/Clerk-Auth-6C47FF)
-![Node.js](https://img.shields.io/badge/Node.js-Server-339933?logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express-API-000000?logo=express)
-![BullMQ](https://img.shields.io/badge/BullMQ-Queue-DC382D)
-![Qdrant](https://img.shields.io/badge/Qdrant-Vector_DB-DC244C)
-![OpenAI](https://img.shields.io/badge/OpenAI-LLM-412991?logo=openai&logoColor=white)
-![LangChain](https://img.shields.io/badge/LangChain-RAG-1C3C3C)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS
+- Clerk
+- Node.js + Express
+- BullMQ + Redis
+- Qdrant
+- OpenAI + LangChain
+- Docker Compose
 
 ## Status
 
@@ -87,7 +86,7 @@ http://localhost:3000
 
 ## Environment
 
-In `server/.env`, I set at least:
+In `server/.env`, set at least:
 
 ```env
 OPENAI_API_KEY=your_openai_key
