@@ -1,0 +1,19 @@
+.env
+.env.*
+node_modules/
+*.pdf
+
+# Server runtime artifacts
+server/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/
