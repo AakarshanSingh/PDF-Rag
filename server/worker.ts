@@ -1,15 +1,11 @@
 import { Worker } from 'bullmq';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { OpenAIEmbeddings } from '@langchain/openai';
-import { Document } from '@langchain/core/documents';
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
-import {
-  RecursiveCharacterTextSplitter,
-  TextSplitter,
-} from '@langchain/textsplitters';
+import { config } from './config/env.js';
 
 const worker = new Worker(
-  'file-upload-queue',
+  config.queue.name,
   async (job) => {
     console.log(`Job: ${job.data}`);
     const data = JSON.parse(job.data);
@@ -18,15 +14,15 @@ const worker = new Worker(
     const docs = await loader.load();
 
     const embeddings = new OpenAIEmbeddings({
-      model: 'text-embedding-3-small',
-      apiKey: process.env.OPENAI_API_KEY,
+      model: config.llm.embeddingModel,
+      apiKey: config.openaiApiKey,
     });
 
     const vectorStore = await QdrantVectorStore.fromExistingCollection(
       embeddings,
       {
-        url: process.env.QDRANT_URL,
-        collectionName: 'pdf-docs',
+        url: config.qdrantUrl,
+        collectionName: config.vectorCollection,
       },
     );
 
@@ -37,8 +33,8 @@ const worker = new Worker(
   {
     concurrency: 100,
     connection: {
-      host: 'localhost',
-      port: '6379',
+      host: config.redis.host,
+      port: config.redis.port,
     },
   },
 );

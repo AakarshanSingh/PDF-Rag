@@ -5,18 +5,18 @@ import { Queue } from 'bullmq';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { OpenAI } from 'openai';
+import { config } from './config/env.js';
 
 const app = express();
-const PORT = 8000;
 
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: config.openaiApiKey,
 });
 
-const queue = new Queue('file-upload-queue', {
+const queue = new Queue(config.queue.name, {
   connection: {
-    host: 'localhost',
-    port: '6379',
+    host: config.redis.host,
+    port: config.redis.port,
   },
 });
 
@@ -24,7 +24,7 @@ app.use(cors());
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    cb(null, config.upload.destination);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -32,37 +32,54 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ dest: 'uploads/', storage: storage });
+const upload = multer({
+  dest: config.upload.destination,
+  storage: storage,
+  limits: {
+    fileSize: config.upload.maxFileSize,
+  },
+});
 
 app.get('/', (req, res) => {
   return res.json({ status: 'healthy' });
 });
 
 app.post('/upload/pdf', upload.single('pdf'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'PDF File is Required' });
+  }
+
   await queue.add(
     'file-ready',
     JSON.stringify({
-      filename: req.file.originalname,
-      source: req.file.destination,
-      path: req.file.path,
+      filename: req?.file.originalname,
+      source: req?.file.destination,
+      path: req?.file.path,
     }),
   );
+
   return res.json({ message: 'Uploaded' });
 });
 
 app.get('/chat', async (req, res) => {
-  const userQuery = req.query.message;
+  const rawMessage = req.query.message;
+
+  if (typeof rawMessage !== 'string' || !rawMessage.trim()) {
+    return res.status(400).json({ message: 'message is required' });
+  }
+
+  const userQuery = rawMessage.trim();
 
   const embeddings = new OpenAIEmbeddings({
-    model: 'text-embedding-3-small',
-    apiKey: process.env.OPENAI_API_KEY,
+    model: config.llm.embeddingModel,
+    apiKey: config.openaiApiKey,
   });
 
   const vectorStore = await QdrantVectorStore.fromExistingCollection(
     embeddings,
     {
-      url: process.env.QDRANT_URL,
-      collectionName: 'pdf-docs',
+      url: config.qdrantUrl,
+      collectionName: config.vectorCollection,
     },
   );
 
@@ -79,7 +96,7 @@ app.get('/chat', async (req, res) => {
   `;
 
   const chatResult = await client.chat.completions.create({
-    model: 'gpt-5-nano',
+    model: config.llm.model,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userQuery },
@@ -92,4 +109,6 @@ app.get('/chat', async (req, res) => {
   });
 });
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.listen(config.port, () =>
+  console.log(`Server started on port ${config.port}`),
+);
