@@ -8,7 +8,10 @@
     "dev:worker": "tsx --env-file=.env --watch src/worker.ts",
     "build": "tsc",
     "start": "node --env-file=.env dist/index.js",
-    "start:worker": "node --env-file=.env dist/worker.js"
+    "start:worker": "node --env-file=.env dist/worker.js",
+    "db:generate": "drizzle-kit generate --config src/config/drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config src/config/drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config src/config/drizzle.config.ts"
   },
   "keywords": [],
   "author": "",

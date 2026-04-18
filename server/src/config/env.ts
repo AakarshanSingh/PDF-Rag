@@ -6,16 +6,9 @@ export const config = {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379', 10),
   },
-  postgres: {
-    host: process.env.POSTGRES_HOST || 'localhost',
-    port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
-    user: process.env.POSTGRES_USER || 'pdfrag',
-    password: process.env.POSTGRES_PASSWORD || 'pdfrag',
-    database: process.env.POSTGRES_DB || 'pdfrag',
-    url:
-      process.env.DATABASE_URL ||
-      'postgresql://pdfrag:pdfrag@localhost:5432/pdfrag',
-  },
+  databaseUrl:
+    process.env.DATABASE_URL ||
+    'postgresql://pdfrag:pdfrag@localhost:5432/pdfrag',
   clerk: {
     secretKey: process.env.CLERK_SECRET_KEY || '',
     publishableKey: process.env.CLERK_PUBLISHABLE_KEY || '',
@@ -32,4 +25,5 @@ export const config = {
     embeddingModel: 'text-embedding-3-small',
   },
   vectorCollection: process.env.VECTOR_COLLECTION || 'pdf-docs',
+  uploadLimit: parseInt(process.env.DEFAULT_UPLOAD_LIMIT || '2', 10),
 };
