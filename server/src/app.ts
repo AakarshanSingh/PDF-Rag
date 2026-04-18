@@ -17,4 +17,4 @@ app.get('/', (_req, res) => {
 app.use(clerkMiddleware());
 
 app.use('/upload', requireUser, uploadRouter);
-app.use('/chat', chatRouter);
+app.use('/chat', requireUser, chatRouter);

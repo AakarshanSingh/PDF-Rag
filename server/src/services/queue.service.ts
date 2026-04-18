@@ -2,6 +2,8 @@ import { Queue } from 'bullmq';
 import { config } from '../config/env.js';
 
 export type FileReadyPayload = {
+  documentId: string;
+  ownerClerkId: string;
   filename: string;
   source: string;
   path: string;

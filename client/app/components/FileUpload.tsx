@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { UploadCloud, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import * as React from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, UserButton } from '@clerk/nextjs';
 import { createApiClient } from '@/lib/api';
 
 const FileUploadComponent: React.FC = () => {
@@ -56,6 +56,10 @@ const FileUploadComponent: React.FC = () => {
 
   return (
     <div className='w-full rounded-2xl border border-zinc-800 bg-zinc-950/80 p-5 shadow-2xl'>
+      <div className='mb-4 flex items-center justify-end'>
+        <UserButton />
+      </div>
+
       <input
         ref={fileInputRef}
         type='file'

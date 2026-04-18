@@ -18,9 +18,24 @@ async function getVectorStore() {
   });
 }
 
-export async function retrieveDocuments(query: string, k = 2) {
+export async function retrieveDocuments(
+  query: string,
+  ownerClerkId: string,
+  k = 2,
+) {
   const vectorStore = await getVectorStore();
-  const retriever = vectorStore.asRetriever({ k });
+  const retriever = vectorStore.asRetriever({
+    k,
+    filter: {
+      must: [
+        {
+          key: 'metadata.ownerClerkId',
+          match: { value: ownerClerkId },
+        },
+      ],
+    },
+  });
+
   return retriever.invoke(query);
 }
 
