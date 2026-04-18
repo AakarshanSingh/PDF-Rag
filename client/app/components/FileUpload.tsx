@@ -3,6 +3,8 @@
 import { Button } from '@/components/ui/button';
 import { UploadCloud, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import * as React from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { createApiClient } from '@/lib/api';
 
 const FileUploadComponent: React.FC = () => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -12,6 +14,9 @@ const FileUploadComponent: React.FC = () => {
   const [status, setStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = React.useState<string>('');
 
+  const { getToken } = useAuth();
+  const [apiClient] = React.useState(() => createApiClient(getToken));
+
   const uploadFile = async (file: File) => {
     setSelectedFileName(file.name);
     setUploadProgress(0);
@@ -19,45 +24,19 @@ const FileUploadComponent: React.FC = () => {
     setStatusMessage('');
     setIsUploading(true);
 
-    const formData = new FormData();
-    formData.append('pdf', file);
-
     try {
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'http://localhost:8000/upload/pdf');
-
-        xhr.upload.onprogress = (event: ProgressEvent<EventTarget>) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100);
-            setUploadProgress(percent);
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            setUploadProgress(100);
-            setStatus('success');
-            setStatusMessage('File uploaded successfully.');
-            resolve();
-            return;
-          }
-
-          setStatus('error');
-          setStatusMessage('Upload failed. Please try again.');
-          reject(new Error(`Upload failed with status ${xhr.status}`));
-        };
-
-        xhr.onerror = () => {
-          setStatus('error');
-          setStatusMessage('Unable to reach server.');
-          reject(new Error('Network error during upload.'));
-        };
-
-        xhr.send(formData);
+      await apiClient.uploadPdf(file, (percent) => {
+        setUploadProgress(percent);
       });
-    } catch {
-      // Status updates are already set inside xhr handlers.
+
+      setUploadProgress(100);
+      setStatus('success');
+      setStatusMessage('File uploaded successfully.');
+    } catch (error) {
+      setStatus('error');
+      setStatusMessage(
+        error instanceof Error ? error.message : 'Upload failed. Please try again.'
+      );
     } finally {
       setIsUploading(false);
     }

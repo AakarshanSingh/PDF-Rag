@@ -2,7 +2,9 @@
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { createApiClient } from '@/lib/api';
 
 interface Doc {
   pageContent?: string;
@@ -23,8 +25,10 @@ interface IMessage {
 const ChatComponent: React.FC = () => {
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
   const [messages, setMessages] = useState<IMessage[]>([]);
+
+  const { getToken } = useAuth();
+  const apiClient = useMemo(() => createApiClient(getToken), [getToken]);
 
   const handleSendChatMessage = async () => {
     if (!message.trim() || isLoading) {
@@ -37,10 +41,7 @@ const ChatComponent: React.FC = () => {
     setMessages((prev) => [...prev, { role: 'user', content: pendingMessage }]);
 
     try {
-      const res = await fetch(
-        `http://localhost:8000/chat?message=${encodeURIComponent(pendingMessage)}`,
-      );
-      const data = await res.json();
+      const data = await apiClient.chat(pendingMessage);
       setMessages((prev) => [
         ...prev,
         {
