@@ -35,17 +35,14 @@ Main outcome: questions are answered using relevant content from uploaded PDFs.
 - [x] Upload a PDF and send it for background indexing
 - [x] Ask questions and get answers using retrieved PDF context
 - [x] Show retrieved references/chunks alongside responses
-- [x] Keep chat + upload flow usable in a clean UI
+- [x] Filter retrieval by current authenticated user to avoid cross-user mixing
 
 ### Updates Coming
 
 - [ ] Persist uploaded file list per user after refresh
-- [ ] Track document ownership (`userId` + `documentId`) during indexing
-- [ ] Filter retrieval by current user and selected document
-- [ ] Add document picker to choose which PDF to chat with
 - [ ] Show indexing states (`uploaded`, `processing`, `ready`, `failed`)
+- [ ] Enforce per-user upload quota limit in upload controller
 - [ ] Add delete file flow with vector cleanup
-- [ ] Add tests for upload, worker, and chat paths
 
 ## How To Run
 
