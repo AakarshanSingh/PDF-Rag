@@ -1,19 +1,15 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { createApiClient } from '@/lib/api';
+import { ArrowUp, FileText, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Doc {
   pageContent?: string;
-  metadata?: {
-    loc?: {
-      pageNumber?: number;
-    };
-    source?: string;
-  };
+  metadata?: { loc?: { pageNumber?: number }; source?: string };
   id?: string;
 }
 interface IMessage {
@@ -22,140 +18,252 @@ interface IMessage {
   documents?: Doc[];
 }
 
+const DocItem = memo(({ doc, idx }: { doc: Doc; idx: number }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className='overflow-hidden rounded-lg border border-zinc-800/80 bg-zinc-950/70'>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className='flex w-full items-center gap-2 bg-zinc-900/70 px-3 py-2 text-left transition-colors hover:bg-zinc-900'
+      >
+        <FileText className='h-3.5 w-3.5 text-zinc-500' />
+        <span className='flex-1 text-[11px] text-zinc-400'>
+          Page {doc.metadata?.loc?.pageNumber ?? idx + 1}
+        </span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-zinc-500 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && (
+        <p className='m-0 max-h-40 overflow-y-auto whitespace-pre-wrap wrap-break-word bg-zinc-950 px-3 py-2 text-[11px] leading-relaxed text-zinc-400'>
+          {doc.pageContent?.trim() || 'No preview available'}
+        </p>
+      )}
+    </div>
+  );
+});
+DocItem.displayName = 'DocItem';
+
+const SourceDocs = memo(({ docs }: { docs: Doc[] }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className='mt-2 overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-900/30'>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className='flex w-full items-center gap-2 bg-zinc-900/70 px-3 py-2 transition-colors hover:bg-zinc-900'
+      >
+        <FileText className='h-3.5 w-3.5 text-zinc-500' />
+        <span className='flex-1 text-left text-[11px] text-zinc-400'>
+          {docs.length} source{docs.length !== 1 ? 's' : ''}
+        </span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-zinc-500 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && (
+        <div className='flex flex-col gap-2 bg-zinc-950/70 p-2.5'>
+          {docs.map((doc, i) => (
+            <DocItem key={doc.id ?? i} doc={doc} idx={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+SourceDocs.displayName = 'SourceDocs';
+
+const Message = memo(({ entry }: { entry: IMessage }) => {
+  if (entry.role === 'user') {
+    return (
+      <div className='flex justify-end'>
+        <div className='max-w-[78%] whitespace-pre-wrap wrap-break-word rounded-2xl rounded-br-md border border-zinc-700/80 bg-zinc-800 px-3.5 py-2.5 text-sm leading-relaxed text-zinc-100'>
+          {entry.content}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className='max-w-[84%]'>
+      <p className='m-0 whitespace-pre-wrap wrap-break-word text-sm leading-7 text-zinc-300'>
+        {entry.content}
+      </p>
+      {entry.documents && entry.documents.length > 0 && (
+        <SourceDocs docs={entry.documents} />
+      )}
+    </div>
+  );
+});
+Message.displayName = 'Message';
+
+const TypingDots = memo(() => (
+  <div className='flex gap-1.5 py-1'>
+    {([0, 120, 240] as const).map((d) => (
+      <span
+        key={d}
+        className='inline-block h-1.5 w-1.5 rounded-full bg-zinc-500'
+        style={{ animation: `dotPulse 1.2s ease-in-out ${d}ms infinite` }}
+      />
+    ))}
+  </div>
+));
+TypingDots.displayName = 'TypingDots';
+
 const ChatComponent: React.FC = () => {
-  const [message, setMessage] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<IMessage[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const msgCount = messages.length;
 
   const { getToken } = useAuth();
   const apiClient = useMemo(() => createApiClient(getToken), [getToken]);
 
-  const handleSendChatMessage = async () => {
-    if (!message.trim() || isLoading) {
-      return;
-    }
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [msgCount, isLoading]);
 
-    const pendingMessage = message;
+  const handleSend = useCallback(async () => {
+    const text = message.trim();
+    if (!text || isLoading) return;
     setMessage('');
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setIsLoading(true);
-    setMessages((prev) => [...prev, { role: 'user', content: pendingMessage }]);
-
+    setMessages((prev) => [...prev, { role: 'user', content: text }]);
     try {
-      const data = await apiClient.chat(pendingMessage);
+      const data = await apiClient.chat(text);
       setMessages((prev) => [
         ...prev,
-        {
-          role: 'assistant',
-          content: data?.message,
-          documents: data?.docs,
-        },
+        { role: 'assistant', content: data?.message, documents: data?.docs },
       ]);
     } catch {
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: 'Something went wrong while contacting the server.',
+          content: 'Something went wrong. Please try again.',
         },
       ]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [message, isLoading, apiClient]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setMessage(e.target.value);
+      e.target.style.height = 'auto';
+      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+    },
+    [],
+  );
+
+  const userCount = useMemo(
+    () => messages.filter((m) => m.role === 'user').length,
+    [messages],
+  );
 
   return (
-    <section className='h-full flex flex-col'>
-      <div className='sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/85 backdrop-blur px-4 py-3 md:px-6'>
-        <h2 className='text-sm md:text-base font-semibold tracking-wide text-zinc-100'>
-          Ask About Your PDF
-        </h2>
-        <p className='text-xs text-zinc-400'>
-          Ask questions and review the extracted document chunks.
-        </p>
+    <section className='flex h-full flex-col bg-zinc-950'>
+      <style>{`
+        @keyframes dotPulse {
+          0%,80%,100%{opacity:.3;transform:scale(.85)}
+          40%{opacity:1;transform:scale(1)}
+        }
+        .msg-in{animation:msgIn .2s cubic-bezier(.16,1,.3,1) both}
+        @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        .send-btn:not(:disabled):active{transform:scale(.96)}
+        .msgs-scroll{scrollbar-width:thin;scrollbar-color:#27272a transparent}
+        .msgs-scroll::-webkit-scrollbar{width:4px}
+        .msgs-scroll::-webkit-scrollbar-track{background:transparent}
+        .msgs-scroll::-webkit-scrollbar-thumb{background:#27272a;border-radius:99px}
+      `}</style>
+
+      <div className='flex shrink-0 items-center border-b border-zinc-800/80 px-5 py-3.5'>
+        <span className='text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-500'>
+          PDF Chat
+        </span>
+        {userCount > 0 && (
+          <span className='ml-auto rounded-md border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-[11px] text-zinc-500'>
+            {userCount} msg{userCount !== 1 ? 's' : ''}
+          </span>
+        )}
       </div>
 
-      <div className='flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 space-y-4'>
-        {messages.length === 0 ? (
-          <div className='rounded-xl border border-dashed border-zinc-700 bg-zinc-900/40 p-4 text-sm text-zinc-300'>
-            No messages yet. Ask something like: What is this project about?
+      <div
+        className='msgs-scroll flex-1 overflow-y-auto px-5 py-6'
+        style={{ WebkitOverflowScrolling: 'touch' as any }}
+      >
+        {msgCount === 0 && (
+          <div className='m-auto flex flex-col items-center gap-3 text-center'>
+            <div className='flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900'>
+              <FileText className='h-5 w-5 text-zinc-500' />
+            </div>
+            <div>
+              <p className='mb-2 text-sm font-medium text-zinc-300'>
+                Ask anything about your PDF
+              </p>
+              <p className='text-sm leading-relaxed text-zinc-500'>
+                Try "Summarize this document" or
+                <br />
+                "What are the key takeaways?"
+              </p>
+            </div>
           </div>
-        ) : null}
-
-        {messages.map((entry, index) => (
-          <article key={index} className='space-y-2'>
-            <div
-              className={`max-w-[92%] rounded-xl border px-3 py-2 text-sm whitespace-pre-wrap ${
-                entry.role === 'user'
-                  ? 'ml-auto border-zinc-600 bg-zinc-800 text-zinc-100'
-                  : 'mr-auto border-zinc-800 bg-zinc-900/80 text-zinc-200'
-              }`}
-            >
-              {entry.content}
+        )}
+        <div className='flex flex-col gap-5'>
+          {messages.map((entry, i) => (
+            <div key={i} className='msg-in'>
+              <Message entry={entry} />
             </div>
-
-            {entry.role === 'assistant' && entry.documents && entry.documents.length > 0 ? (
-              <details className='rounded-lg border border-zinc-800 bg-zinc-900/50 p-3'>
-                <summary className='cursor-pointer text-xs uppercase tracking-wider text-zinc-400'>
-                  Retrieved Documents ({entry.documents.length})
-                </summary>
-                <div className='mt-3 space-y-2'>
-                  {entry.documents.map((doc, docIndex) => (
-                    <details
-                      key={doc.id ?? `${index}-${docIndex}`}
-                      className='rounded-md border border-zinc-800 bg-zinc-950/70 p-2'
-                    >
-                      <summary className='cursor-pointer text-[11px] text-zinc-300'>
-                        Page {doc.metadata?.loc?.pageNumber ?? '-'} -{' '}
-                        {doc.metadata?.source ?? 'Unknown source'}
-                      </summary>
-                      <p className='mt-2 text-xs leading-relaxed text-zinc-300 whitespace-pre-wrap'>
-                        {doc.pageContent?.trim() || 'No preview available'}
-                      </p>
-                    </details>
-                  ))}
-                </div>
-              </details>
-            ) : null}
-          </article>
-        ))}
-
-        {isLoading ? (
-          <article className='space-y-2'>
-            <div className='mr-auto max-w-[92%] rounded-xl border border-zinc-800 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-300'>
-              <div className='inline-flex items-center gap-2'>
-                <span className='h-2 w-2 rounded-full bg-zinc-400 animate-pulse' />
-                <span className='h-2 w-2 rounded-full bg-zinc-400 animate-pulse [animation-delay:120ms]' />
-                <span className='h-2 w-2 rounded-full bg-zinc-400 animate-pulse [animation-delay:240ms]' />
-                <span className='text-xs text-zinc-400'>AI is responding...</span>
-              </div>
+          ))}
+          {isLoading && (
+            <div className='msg-in'>
+              <TypingDots />
             </div>
-          </article>
-        ) : null}
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      <div className='sticky bottom-0 border-t border-zinc-800 bg-zinc-950/90 backdrop-blur p-4 md:p-6'>
-        <form
-          className='flex gap-2'
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSendChatMessage();
-          }}
-        >
-          <Input
-            placeholder='Type your message here'
+      <div className='shrink-0 border-t border-zinc-800/80 px-4 pb-4 pt-3'>
+        <div className='flex justify-center items-center gap-2 rounded-xl'>
+          <Textarea
+            ref={textareaRef}
+            className='flex-1 max-h-40 min-h-10 resize-none border-0 bg-transparent text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0'
+            rows={1}
+            placeholder='Ask something about your PDF...'
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className='bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-500'
+            disabled={isLoading}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
           />
+
           <Button
-            type='submit'
-            onClick={handleSendChatMessage}
+            onClick={handleSend}
             disabled={!message.trim() || isLoading}
-            className='bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+            size='icon'
+            variant='secondary'
+            type='button'
+            className='h-10 w-10 shrink-0 rounded-lg bg-zinc-100 text-zinc-900 hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600'
           >
-            {isLoading ? 'Sending...' : 'Send'}
+            <ArrowUp className='h-4 w-4' />
           </Button>
-        </form>
+        </div>
+
+        <p className='mt-2 text-center text-[11px] text-zinc-600'>
+          Enter to send · Shift+Enter for new line
+        </p>
       </div>
     </section>
   );

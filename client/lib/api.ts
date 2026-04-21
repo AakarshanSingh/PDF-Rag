@@ -18,12 +18,25 @@ export type ChatResponse = {
   docs: Doc[];
 };
 
+export type DocumentStatus = 'queued' | 'indexing' | 'indexed' | 'failed';
+
+type UploadResponse = {
+  message: string;
+  documentId: string;
+};
+
+type StatusResponse = {
+  documentId: string;
+  status: DocumentStatus;
+};
+
 export function createApiClient(getToken: GetToken): {
   uploadPdf: (
     file: File,
     onProgress?: (percent: number) => void,
-  ) => Promise<void>;
+  ) => Promise<UploadResponse>;
   chat: (message: string) => Promise<ChatResponse>;
+  getDocumentStatus: (documentId: string) => Promise<DocumentStatus>;
 } {
   const client: AxiosInstance = axios.create({
     baseURL: 'http://localhost:8000',
@@ -43,11 +56,11 @@ export function createApiClient(getToken: GetToken): {
   async function uploadPdf(
     file: File,
     onProgress?: (percent: number) => void,
-  ): Promise<void> {
+  ): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append('pdf', file);
 
-    await client.post('/upload/pdf', formData, {
+    const response = await client.post<UploadResponse>('/upload/pdf', formData, {
       onUploadProgress: (event: AxiosProgressEvent) => {
         if (!onProgress) return;
         if (!event.total) return;
@@ -55,6 +68,7 @@ export function createApiClient(getToken: GetToken): {
         onProgress(percent);
       },
     });
+    return response.data;
   }
 
   async function chat(message: string): Promise<ChatResponse> {
@@ -64,8 +78,16 @@ export function createApiClient(getToken: GetToken): {
     return response.data;
   }
 
+  async function getDocumentStatus(documentId: string): Promise<DocumentStatus> {
+    const response = await client.get<StatusResponse>(
+      `/upload/documents/${documentId}/status`,
+    );
+    return response.data.status;
+  }
+
   return {
     uploadPdf,
     chat,
+    getDocumentStatus,
   };
 }

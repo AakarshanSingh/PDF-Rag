@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { config } from '../config/env.js';
-import { uploadPdfController } from '../controllers/upload.controller.js';
+import {
+  uploadPdfController,
+  getDocumentStatusController,
+} from '../controllers/upload.controller.js';
 
 export const uploadRouter = Router();
 
@@ -24,3 +27,4 @@ const upload = multer({
 });
 
 uploadRouter.post('/pdf', upload.single('pdf'), uploadPdfController);
+uploadRouter.get('/documents/:id/status', getDocumentStatusController);

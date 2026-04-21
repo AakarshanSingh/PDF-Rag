@@ -8,8 +8,6 @@ export async function requireUser(
 ) {
   const auth = getAuth(req);
 
-  console.log(auth);
-
   if (!auth.userId) {
     return res.status(401).json({ message: 'Unauthorized' });
   }

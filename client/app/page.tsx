@@ -1,14 +1,65 @@
+'use client';
+
+import { useState } from 'react';
 import ChatComponent from './components/Chat';
 import FileUploadComponent from './components/FileUpload';
+import { PanelLeft, X } from 'lucide-react';
 
 export default function Home() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <main className='h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100 md:flex'>
-      <div className='md:w-[32%] lg:w-[30%] h-full p-4 md:p-6 border-b md:border-b-0 md:border-r border-zinc-800 flex justify-center items-start md:items-center bg-zinc-900/60'>
-        <FileUploadComponent />
+    <main className='h-screen w-screen overflow-hidden bg-[#0c0c0e] flex flex-col md:flex-row'>
+      {/* ── Mobile top bar ── */}
+      <div className='flex items-center justify-between px-4 py-3 border-b border-[#1a1a1d] md:hidden shrink-0'>
+        <span className='text-xs font-semibold tracking-widest uppercase text-[#555]'>
+          PDF Chat
+        </span>
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className='p-1.5 rounded-lg bg-[#111113] border border-[#1e1e22] text-[#666]'
+          aria-label='Open document panel'
+        >
+          <PanelLeft size={16} />
+        </button>
       </div>
 
-      <div className='md:w-[68%] lg:w-[70%] h-full overflow-y-auto'>
+      {/* ── Mobile sidebar overlay ── */}
+      {sidebarOpen && (
+        <div className='fixed inset-0 z-50 md:hidden'>
+          {/* Backdrop */}
+          <div
+            className='absolute inset-0 bg-black/60 backdrop-blur-sm'
+            onClick={() => setSidebarOpen(false)}
+          />
+          {/* Panel */}
+          <div className='absolute left-0 top-0 bottom-0 w-[300px] bg-[#0f0f11] border-r border-[#1e1e22] flex flex-col'>
+            <div className='flex items-center justify-between px-4 py-3 border-b border-[#1a1a1d]'>
+              <span className='text-xs font-semibold tracking-widest uppercase text-[#555]'>
+                Document
+              </span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className='p-1.5 rounded-lg bg-[#111113] border border-[#1e1e22] text-[#666]'
+                aria-label='Close panel'
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className='flex-1 overflow-y-auto p-4'>
+              <FileUploadComponent />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Desktop sidebar ── */}
+      <aside className='hidden md:flex w-90 shrink-0 flex-col h-full border-r border-[#1a1a1d] bg-[#0f0f11]'>
+        <FileUploadComponent />
+      </aside>
+
+      {/* ── Chat ── */}
+      <div className='flex-1 min-w-0 h-full overflow-hidden flex flex-col'>
         <ChatComponent />
       </div>
     </main>

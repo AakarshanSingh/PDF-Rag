@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ClerkProvider, Show, SignUp } from '@clerk/nextjs';
 import { Montserrat, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { Toaster } from '@/components/ui/sonner';
 
 const montserrat = Montserrat({
   variable: '--font-montserrat',
@@ -36,6 +37,7 @@ export default function RootLayout({
             </main>
           </Show>
           <Show when='signed-in'>{children}</Show>
+          <Toaster richColors position='top-center' />
         </ClerkProvider>
       </body>
     </html>
