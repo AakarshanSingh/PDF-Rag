@@ -20,6 +20,13 @@ export type ChatResponse = {
 
 export type DocumentStatus = 'queued' | 'indexing' | 'indexed' | 'failed';
 
+export type UserDocument = {
+  id: string;
+  filename: string;
+  status: DocumentStatus;
+  createdAt: string;
+};
+
 type UploadResponse = {
   message: string;
   documentId: string;
@@ -30,6 +37,11 @@ type StatusResponse = {
   status: DocumentStatus;
 };
 
+type DocumentsResponse = {
+  documents: UserDocument[];
+  uploadLimit: number;
+};
+
 export function createApiClient(getToken: GetToken): {
   uploadPdf: (
     file: File,
@@ -37,6 +49,7 @@ export function createApiClient(getToken: GetToken): {
   ) => Promise<UploadResponse>;
   chat: (message: string) => Promise<ChatResponse>;
   getDocumentStatus: (documentId: string) => Promise<DocumentStatus>;
+  getDocuments: () => Promise<DocumentsResponse>;
 } {
   const client: AxiosInstance = axios.create({
     baseURL: 'http://localhost:8000',
@@ -85,9 +98,15 @@ export function createApiClient(getToken: GetToken): {
     return response.data.status;
   }
 
+  async function getDocuments(): Promise<DocumentsResponse> {
+    const response = await client.get<DocumentsResponse>('/upload/documents');
+    return response.data;
+  }
+
   return {
     uploadPdf,
     chat,
     getDocumentStatus,
+    getDocuments,
   };
 }

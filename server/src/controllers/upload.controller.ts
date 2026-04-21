@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { count, desc, eq } from 'drizzle-orm';
 import { getAuth } from '@clerk/express';
 import type { Request, Response } from 'express';
 import { addFileReadyJob } from '../services/queue.service.js';
@@ -17,6 +17,18 @@ export async function uploadPdfController(req: Request, res: Response) {
   }
 
   const appUser = await getOrCreateUserByClerkId(auth.userId);
+
+  const quotaRows = await db
+    .select({ total: count() })
+    .from(documents)
+    .where(eq(documents.userId, appUser.id));
+
+  const currentCount = Number(quotaRows[0]?.total ?? 0);
+  if (currentCount >= appUser.uploadLimit) {
+    return res.status(429).json({
+      message: `Upload limit reached. You can upload up to ${appUser.uploadLimit} files.`,
+    });
+  }
 
   const inserted = await db
     .insert(documents)
@@ -45,6 +57,31 @@ export async function uploadPdfController(req: Request, res: Response) {
   });
 
   return res.json({ message: 'Uploaded', documentId });
+}
+
+export async function getUserDocumentsController(req: Request, res: Response) {
+  const auth = getAuth(req);
+  if (!auth.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const appUser = await getOrCreateUserByClerkId(auth.userId);
+
+  const rows = await db
+    .select({
+      id: documents.id,
+      filename: documents.filename,
+      status: documents.status,
+      createdAt: documents.createdAt,
+    })
+    .from(documents)
+    .where(eq(documents.userId, appUser.id))
+    .orderBy(desc(documents.createdAt));
+
+  return res.json({
+    documents: rows,
+    uploadLimit: appUser.uploadLimit,
+  });
 }
 
 export async function getDocumentStatusController(req: Request, res: Response) {

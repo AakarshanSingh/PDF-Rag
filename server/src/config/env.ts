@@ -25,5 +25,5 @@ export const config = {
     embeddingModel: 'text-embedding-3-small',
   },
   vectorCollection: process.env.VECTOR_COLLECTION || 'pdf-docs',
-  uploadLimit: parseInt(process.env.DEFAULT_UPLOAD_LIMIT || '2', 10),
+  uploadLimit: parseInt(process.env.DEFAULT_UPLOAD_LIMIT || '1', 10),
 };

@@ -36,13 +36,14 @@ Main outcome: questions are answered using relevant content from uploaded PDFs.
 - [x] Ask questions and get answers using retrieved PDF context
 - [x] Show retrieved references/chunks alongside responses
 - [x] Filter retrieval by current authenticated user to avoid cross-user mixing
+- [x] Persist uploaded file list per user after refresh
+- [x] Enforce per-user upload quota limit in upload controller
+- [x] Show indexing states (`uploaded`, `processing`, `ready`, `failed`)
 
 ### Updates Coming
 
-- [ ] Persist uploaded file list per user after refresh
-- [ ] Show indexing states (`uploaded`, `processing`, `ready`, `failed`)
-- [ ] Enforce per-user upload quota limit in upload controller
 - [ ] Add delete file flow with vector cleanup
+- [ ] Add payment gateway for upload user quota
 
 ## How To Run
 

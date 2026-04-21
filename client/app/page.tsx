@@ -33,7 +33,7 @@ export default function Home() {
             onClick={() => setSidebarOpen(false)}
           />
           {/* Panel */}
-          <div className='absolute left-0 top-0 bottom-0 w-[300px] bg-[#0f0f11] border-r border-[#1e1e22] flex flex-col'>
+          <div className='absolute left-0 top-0 bottom-0 w-75 bg-[#0f0f11] border-r border-[#1e1e22] flex flex-col'>
             <div className='flex items-center justify-between px-4 py-3 border-b border-[#1a1a1d]'>
               <span className='text-xs font-semibold tracking-widest uppercase text-[#555]'>
                 Document

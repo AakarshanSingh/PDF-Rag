@@ -3,6 +3,7 @@ import multer from 'multer';
 import { config } from '../config/env.js';
 import {
   uploadPdfController,
+  getUserDocumentsController,
   getDocumentStatusController,
 } from '../controllers/upload.controller.js';
 
@@ -27,4 +28,5 @@ const upload = multer({
 });
 
 uploadRouter.post('/pdf', upload.single('pdf'), uploadPdfController);
+uploadRouter.get('/documents', getUserDocumentsController);
 uploadRouter.get('/documents/:id/status', getDocumentStatusController);

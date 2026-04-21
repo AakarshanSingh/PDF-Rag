@@ -9,6 +9,13 @@ import { UploadCloud, File, CheckCircle, XCircle, Loader } from 'lucide-react';
 type DocStatus = 'idle' | 'queued' | 'indexing' | 'indexed' | 'failed';
 type UploadStatus = 'idle' | 'success' | 'error';
 
+type UserDocument = {
+  id: string;
+  filename: string;
+  status: DocStatus;
+  createdAt: string;
+};
+
 const STATUS_LABEL: Record<DocStatus, string> = {
   idle: '',
   queued: 'In queue...',
@@ -33,6 +40,7 @@ const STATUS_WIDTH: Record<DocStatus, string> = {
 
 const FileUploadComponent: React.FC = () => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const pollIntervalRef = React.useRef<number | null>(null);
   const [fileName, setFileName] = React.useState('');
   const [progress, setProgress] = React.useState(0);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -40,36 +48,88 @@ const FileUploadComponent: React.FC = () => {
   const [errorMsg, setErrorMsg] = React.useState('');
   const [docStatus, setDocStatus] = React.useState<DocStatus>('idle');
   const [isDragging, setIsDragging] = React.useState(false);
+  const [documents, setDocuments] = React.useState<UserDocument[]>([]);
+  const [uploadLimit, setUploadLimit] = React.useState<number | null>(null);
+  const [documentsLoading, setDocumentsLoading] = React.useState(false);
 
   const { getToken } = useAuth();
   const apiClient = React.useMemo(() => createApiClient(getToken), [getToken]);
 
+  const uploadBlocked =
+    uploadLimit !== null && documents.length >= uploadLimit;
+
+  const loadDocuments = React.useCallback(async () => {
+    setDocumentsLoading(true);
+    try {
+      const response = await apiClient.getDocuments();
+      setDocuments(response.documents);
+      setUploadLimit(response.uploadLimit);
+    } catch {
+      toast.error('Could not load your document list.');
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }, [apiClient]);
+
+  React.useEffect(() => {
+    void loadDocuments();
+
+    return () => {
+      if (pollIntervalRef.current) {
+        window.clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [loadDocuments]);
+
   const pollStatus = React.useCallback(
     async (documentId: string) => {
+      if (pollIntervalRef.current) {
+        window.clearInterval(pollIntervalRef.current);
+      }
+
       setDocStatus('queued');
-      const id = window.setInterval(async () => {
+      pollIntervalRef.current = window.setInterval(async () => {
         try {
           const s: DocStatus = await apiClient.getDocumentStatus(documentId);
           setDocStatus(s);
+          await loadDocuments();
           if (s === 'indexed') {
             toast.success('PDF ready.');
-            window.clearInterval(id);
+            if (pollIntervalRef.current) {
+              window.clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
           }
           if (s === 'failed') {
             toast.error('Indexing failed.');
-            window.clearInterval(id);
+            if (pollIntervalRef.current) {
+              window.clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
           }
         } catch {
           toast.error('Could not check status.');
-          window.clearInterval(id);
+          if (pollIntervalRef.current) {
+            window.clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
         }
       }, 2000);
     },
-    [apiClient],
+    [apiClient, loadDocuments],
   );
 
   const uploadFile = React.useCallback(
     async (file: File) => {
+      if (uploadBlocked) {
+        toast.error(
+          uploadLimit
+            ? `Upload limit reached. You can upload up to ${uploadLimit} files.`
+            : 'Upload limit reached.',
+        );
+        return;
+      }
+
       setFileName(file.name);
       setProgress(0);
       setUploadStatus('idle');
@@ -83,6 +143,7 @@ const FileUploadComponent: React.FC = () => {
         setUploadStatus('success');
         toast.dismiss(tid);
         toast.success('Upload complete.');
+        await loadDocuments();
         await pollStatus(result.documentId);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Upload failed.';
@@ -94,7 +155,7 @@ const FileUploadComponent: React.FC = () => {
         setIsUploading(false);
       }
     },
-    [apiClient, pollStatus],
+    [apiClient, pollStatus, uploadBlocked, uploadLimit, loadDocuments],
   );
 
   const handleChange = React.useCallback(
@@ -111,6 +172,14 @@ const FileUploadComponent: React.FC = () => {
     async (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
+      if (uploadBlocked) {
+        toast.error(
+          uploadLimit
+            ? `Upload limit reached. You can upload up to ${uploadLimit} files.`
+            : 'Upload limit reached.',
+        );
+        return;
+      }
       const file = e.dataTransfer.files?.[0];
       if (!file) return;
       if (file.type !== 'application/pdf') {
@@ -119,7 +188,7 @@ const FileUploadComponent: React.FC = () => {
       }
       await uploadFile(file);
     },
-    [uploadFile],
+    [uploadFile, uploadBlocked, uploadLimit],
   );
 
   const handleDragOver = React.useCallback((e: React.DragEvent) => {
@@ -127,7 +196,27 @@ const FileUploadComponent: React.FC = () => {
     setIsDragging(true);
   }, []);
   const handleDragLeave = React.useCallback(() => setIsDragging(false), []);
-  const openPicker = React.useCallback(() => fileInputRef.current?.click(), []);
+  const openPicker = React.useCallback(() => {
+    if (uploadBlocked) {
+      toast.error(
+        uploadLimit
+          ? `Upload limit reached. You can upload up to ${uploadLimit} files.`
+          : 'Upload limit reached.',
+      );
+      return;
+    }
+
+    fileInputRef.current?.click();
+  }, [uploadBlocked, uploadLimit]);
+  const formatDate = React.useCallback((value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }, []);
 
   return (
     <div
@@ -366,6 +455,116 @@ const FileUploadComponent: React.FC = () => {
         </div>
       )}
 
+      {/* Persisted files */}
+      <div
+        style={{
+          background: '#111113',
+          border: '0.5px solid #1e1e22',
+          borderRadius: 11,
+          padding: '10px 12px',
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 10,
+          }}
+        >
+          <p style={{ fontSize: 11, color: '#777', margin: 0, fontWeight: 600 }}>
+            Your files
+          </p>
+          {uploadLimit !== null && (
+            <span style={{ fontSize: 10, color: '#444' }}>
+              {documents.length}/{uploadLimit}
+            </span>
+          )}
+        </div>
+
+        {documentsLoading ? (
+          <p style={{ fontSize: 12, color: '#555', margin: 0 }}>Loading files...</p>
+        ) : documents.length === 0 ? (
+          <p style={{ fontSize: 12, color: '#555', margin: 0 }}>
+            No uploaded files yet.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {documents.map((doc) => (
+              <div
+                key={doc.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  padding: '8px 10px',
+                  background: '#0e0e10',
+                  border: '0.5px solid #1e1e22',
+                  borderRadius: 9,
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      color: '#ddd',
+                      fontWeight: 500,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {doc.filename}
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontSize: 10, color: '#555' }}>
+                    {formatDate(doc.createdAt)}
+                  </p>
+                </div>
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '4px 8px',
+                    borderRadius: 999,
+                    background:
+                      doc.status === 'indexed'
+                        ? '#0f2418'
+                        : doc.status === 'indexing'
+                          ? '#13213a'
+                          : doc.status === 'failed'
+                            ? '#2a1414'
+                            : '#1b1b1f',
+                    color:
+                      doc.status === 'indexed'
+                        ? '#4ade80'
+                        : doc.status === 'indexing'
+                          ? '#6b8cff'
+                          : doc.status === 'failed'
+                            ? '#f87171'
+                            : '#888',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {STATUS_LABEL[doc.status]}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {uploadLimit !== null && (
+        <p style={{ margin: 0, fontSize: 10, color: '#444' }}>
+          {uploadBlocked
+            ? 'Upload limit reached for this account.'
+            : `${Math.max(uploadLimit - documents.length, 0)} upload${
+                Math.max(uploadLimit - documents.length, 0) === 1 ? '' : 's'
+              } left`}
+        </p>
+      )}
+
       {/* Error */}
       {uploadStatus === 'error' && errorMsg && (
         <div
@@ -387,7 +586,7 @@ const FileUploadComponent: React.FC = () => {
       <button
         className='up-btn'
         onClick={openPicker}
-        disabled={isUploading}
+        disabled={isUploading || uploadBlocked}
         style={{
           width: '100%',
           padding: 12,
@@ -414,6 +613,10 @@ const FileUploadComponent: React.FC = () => {
               style={{ animation: 'spin 1s linear infinite' }}
             />{' '}
             Uploading...
+          </>
+        ) : uploadBlocked ? (
+          <>
+            <XCircle size={14} /> Limit reached
           </>
         ) : (
           <>
