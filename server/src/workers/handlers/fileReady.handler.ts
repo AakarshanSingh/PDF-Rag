@@ -1,6 +1,7 @@
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { addDocumentsToVectorStore } from '../../services/vector.service.js';
 import { setDocumentStatus } from '../document.service.js';
+import fs from 'node:fs/promises';
 
 type FileReadyPayload = {
   documentId: string;
@@ -32,9 +33,14 @@ export async function fileReadyHandler(job: { data: string }) {
     await addDocumentsToVectorStore(docsWithOwner);
     await setDocumentStatus(data.documentId, 'indexed');
 
+    await fs.unlink(data.path).catch(err => console.error(`Failed to delete file ${data.path}:`, err));
+
     console.log('All docs are added to vector store');
   } catch (error) {
     await setDocumentStatus(data.documentId, 'failed');
+    
+    await fs.unlink(data.path).catch(() => {});
+    
     throw error;
   }
 }

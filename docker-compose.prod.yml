@@ -1,0 +1,127 @@
+services:
+  redis:
+    container_name: pdf-rag-redis
+    image: redis:8-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  qdrant:
+    container_name: pdf-rag-qdrant
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  postgres:
+    container_name: pdf-rag-postgres
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pdfrag
+      POSTGRES_PASSWORD: pdfrag
+      POSTGRES_DB: pdfrag
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdfrag -d pdfrag"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  migrator:
+    container_name: pdf-rag-migrator-prod
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+      target: builder
+    env_file:
+      - ./server/.env
+    environment:
+      DATABASE_URL: postgresql://pdfrag:pdfrag@postgres:5432/pdfrag
+    command: ["pnpm", "db:migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  client:
+    container_name: pdf-rag-client-prod
+    build:
+      context: ./client
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - ./client/.env
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+
+  server:
+    container_name: pdf-rag-server-prod
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    environment:
+      NODE_ENV: production
+      PORT: "8000"
+      DATABASE_URL: postgresql://pdfrag:pdfrag@postgres:5432/pdfrag
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      QDRANT_URL: http://qdrant:6333
+    ports:
+      - "8000:8000"
+    volumes:
+      - server_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+      migrator:
+        condition: service_completed_successfully
+
+  worker:
+    container_name: pdf-rag-worker-prod
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    env_file:
+      - ./server/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://pdfrag:pdfrag@postgres:5432/pdfrag
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      QDRANT_URL: http://qdrant:6333
+    volumes:
+      - server_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+
+volumes:
+  redis_data:
+  qdrant_data:
+  postgres_data:
+  server_uploads:
