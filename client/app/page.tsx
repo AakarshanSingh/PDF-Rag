@@ -9,9 +9,9 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <main className='h-screen w-screen overflow-hidden bg-[#0c0c0e] flex flex-col md:flex-row'>
+    <main className='h-[100dvh] w-screen overflow-hidden bg-[#0c0c0e] flex flex-col md:flex-row'>
       {/* ── Mobile top bar ── */}
-      <div className='flex items-center justify-between px-4 py-3 border-b border-[#1a1a1d] md:hidden shrink-0'>
+      <div className='flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)] border-b border-[#1a1a1d] md:hidden shrink-0'>
         <span className='text-xs font-semibold tracking-widest uppercase text-[#555]'>
           PDF Chat
         </span>
@@ -42,7 +42,7 @@ export default function Home() {
             onClick={() => setSidebarOpen(false)}
           />
           {/* Panel */}
-          <div className='absolute left-0 top-0 bottom-0 w-75 bg-[#0f0f11] border-r border-[#1e1e22] flex flex-col'>
+          <div className='absolute left-0 top-0 bottom-0 w-80 bg-[#0f0f11] border-r border-[#1e1e22] flex flex-col pt-[env(safe-area-inset-top)]'>
             <div className='flex items-center justify-between px-4 py-3 border-b border-[#1a1a1d]'>
               <span className='text-xs font-semibold tracking-widest uppercase text-[#555]'>
                 Document
