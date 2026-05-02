@@ -84,6 +84,20 @@ RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=your_resend_from_email
 ```
 
+### The Easy Way (Production Docker)
+
+You can run the entire application stack in a single command using the production Docker Compose file. This automatically builds the apps, runs database migrations, and manages all services without needing multiple terminal windows.
+
+2. Run the production docker-compose file:
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+3. Open the app at `http://localhost:3000`.
+
+### Local Development (Manual)
+
 2. Start infrastructure (from project root).
 
 ```bash
