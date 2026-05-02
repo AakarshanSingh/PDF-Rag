@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import ChatComponent from './components/Chat';
 import FileUploadComponent from './components/FileUpload';
-import { PanelLeft, X } from 'lucide-react';
+import { PanelLeft, X, UploadCloud } from 'lucide-react';
 
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -15,13 +15,22 @@ export default function Home() {
         <span className='text-xs font-semibold tracking-widest uppercase text-[#555]'>
           PDF Chat
         </span>
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className='p-1.5 rounded-lg bg-[#111113] border border-[#1e1e22] text-[#666]'
-          aria-label='Open document panel'
-        >
-          <PanelLeft size={16} />
-        </button>
+        <div className='flex items-center gap-2'>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className='flex items-center gap-1.5 p-1.5 px-2.5 rounded-lg bg-[#111113] border border-[#1e1e22] text-[#888] hover:text-white transition-colors'
+          >
+            <UploadCloud size={15} />
+            <span className='text-[10px] font-bold uppercase tracking-wider'>Upload</span>
+          </button>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className='p-1.5 rounded-lg bg-[#111113] border border-[#1e1e22] text-[#666]'
+            aria-label='Open document panel'
+          >
+            <PanelLeft size={16} />
+          </button>
+        </div>
       </div>
 
       {/* ── Mobile sidebar overlay ── */}

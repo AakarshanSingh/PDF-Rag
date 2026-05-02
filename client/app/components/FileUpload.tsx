@@ -222,7 +222,6 @@ const FileUploadComponent: React.FC = () => {
     <div
       style={{
         width: '100%',
-        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         padding: 20,
@@ -289,6 +288,49 @@ const FileUploadComponent: React.FC = () => {
         </button>
       </div>
 
+      {/* CTA - Moved to top for better visibility */}
+      <button
+        className='up-btn'
+        onClick={openPicker}
+        disabled={isUploading || uploadBlocked}
+        style={{
+          width: '100%',
+          padding: 12,
+          borderRadius: 11,
+          border: 'none',
+          background: '#f0f0f0',
+          color: '#0c0c0e',
+          fontSize: 13,
+          fontWeight: 600,
+          fontFamily: 'inherit',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 7,
+          transition: 'background 0.15s, transform 0.1s',
+          flexShrink: 0,
+        }}
+      >
+        {isUploading ? (
+          <>
+            <Loader
+              size={14}
+              style={{ animation: 'spin 1s linear infinite' }}
+            />{' '}
+            Uploading...
+          </>
+        ) : uploadBlocked ? (
+          <>
+            <XCircle size={14} /> Limit reached
+          </>
+        ) : (
+          <>
+            <UploadCloud size={14} /> Choose PDF
+          </>
+        )}
+      </button>
+
       {/* Drop zone */}
       <div
         className={`drop-zone${isDragging ? ' drag' : ''}`}
@@ -297,7 +339,6 @@ const FileUploadComponent: React.FC = () => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         style={{
-          flex: 1,
           minHeight: 120,
           border: '1.5px dashed #1e1e22',
           borderRadius: 14,
@@ -572,48 +613,7 @@ const FileUploadComponent: React.FC = () => {
 
 
 
-      {/* CTA */}
-      <button
-        className='up-btn'
-        onClick={openPicker}
-        disabled={isUploading || uploadBlocked}
-        style={{
-          width: '100%',
-          padding: 12,
-          borderRadius: 11,
-          border: 'none',
-          background: '#f0f0f0',
-          color: '#0c0c0e',
-          fontSize: 13,
-          fontWeight: 600,
-          fontFamily: 'inherit',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 7,
-          transition: 'background 0.15s, transform 0.1s',
-          flexShrink: 0,
-        }}
-      >
-        {isUploading ? (
-          <>
-            <Loader
-              size={14}
-              style={{ animation: 'spin 1s linear infinite' }}
-            />{' '}
-            Uploading...
-          </>
-        ) : uploadBlocked ? (
-          <>
-            <XCircle size={14} /> Limit reached
-          </>
-        ) : (
-          <>
-            <UploadCloud size={14} /> Choose PDF
-          </>
-        )}
-      </button>
+
     </div>
   );
 };
