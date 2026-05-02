@@ -23,6 +23,7 @@ async function setupDemoUser() {
         email,
         password: hashedPassword,
         isVerified: true,
+        uploadLimit:1
       });
       console.log('Demo user created successfully: demo@example.com / password123');
     } else {

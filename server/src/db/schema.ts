@@ -22,7 +22,7 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   isVerified: boolean('is_verified').notNull().default(false),
   verificationToken: text('verification_token'),
-  uploadLimit: integer('upload_limit').notNull().default(2),
+  uploadLimit: integer('upload_limit').notNull().default(1),
   isAdmin: boolean('is_admin').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
