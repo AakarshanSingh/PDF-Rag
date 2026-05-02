@@ -1,5 +1,25 @@
 # PDF RAG
 
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <img height="32" src="https://skillicons.dev/icons?i=nextjs" title="Next.js" />
+  <img height="32" src="https://skillicons.dev/icons?i=react" title="React" />
+  <img height="32" src="https://skillicons.dev/icons?i=ts" title="TypeScript" />
+  <img height="32" src="https://skillicons.dev/icons?i=tailwind" title="Tailwind CSS" />
+  <img height="32" src="https://skillicons.dev/icons?i=nodejs" title="Node.js" />
+  <img height="32" src="https://skillicons.dev/icons?i=express" title="Express" />
+  <img height="32" src="https://skillicons.dev/icons?i=redis" title="Redis" />
+  <img height="32" src="https://skillicons.dev/icons?i=docker" title="Docker Compose" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://unpkg.com/@lobehub/icons-static-webp@latest/dark/openai.webp" />
+    <img height="32" src="https://unpkg.com/@lobehub/icons-static-webp@latest/light/openai.webp" title="OpenAI" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://unpkg.com/@lobehub/icons-static-webp@latest/dark/langchain.webp" />
+    <img height="32" src="https://unpkg.com/@lobehub/icons-static-webp@latest/light/langchain.webp" title="LangChain" />
+  </picture>
+  <img height="32" src="https://skillicons.dev/icons?i=githubactions" title="GitHub Actions" />
+</div>
+
 PDF RAG is a full-stack project for chatting with PDF documents using retrieval-augmented generation (RAG).
 
 A PDF is uploaded, indexed in the background, and then used as context for question answering.
@@ -21,12 +41,13 @@ Main outcome: questions are answered using relevant content from uploaded PDFs.
 - React 19
 - TypeScript
 - Tailwind CSS
-- Clerk
+- Custom Authentication (JWT & Resend)
 - Node.js + Express
 - BullMQ + Redis
 - Qdrant
 - OpenAI + LangChain
 - Docker Compose
+- GitHub Actions (CI/CD)
 
 ## Status
 
@@ -55,18 +76,12 @@ Main outcome: questions are answered using relevant content from uploaded PDFs.
 DATABASE_URL=postgresql://pdfrag:pdfrag@localhost:5432/pdfrag
 REDIS_HOST=localhost
 REDIS_PORT=6379
-CLERK_SECRET_KEY=your_clerk_secret_key
-CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-DEFAULT_UPLOAD_LIMIT=2
+DEFAULT_UPLOAD_LIMIT=1
 OPENAI_API_KEY=your_openai_key
 QDRANT_URL=http://localhost:6333
-```
-
-`client/.env`
-
-```env
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
+JWT_SECRET=your_jwt_secret
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=your_resend_from_email
 ```
 
 2. Start infrastructure (from project root).
