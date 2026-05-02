@@ -20,7 +20,7 @@ async function getVectorStore() {
 
 export async function retrieveDocuments(
   query: string,
-  ownerClerkId: string,
+  ownerId: string,
   k = 2,
 ) {
   const vectorStore = await getVectorStore();
@@ -29,8 +29,8 @@ export async function retrieveDocuments(
     filter: {
       must: [
         {
-          key: 'metadata.ownerClerkId',
-          match: { value: ownerClerkId },
+          key: 'metadata.ownerId',
+          match: { value: ownerId },
         },
       ],
     },

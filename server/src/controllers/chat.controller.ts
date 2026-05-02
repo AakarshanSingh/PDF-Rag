@@ -1,12 +1,12 @@
-import { getAuth } from '@clerk/express';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
+import type { AuthRequest } from '../middleware/requireUser.js';
 import { retrieveDocuments } from '../services/vector.service.js';
 import { generateChatAnswer } from '../services/llm.service.js';
 
-export async function chatController(req: Request, res: Response) {
+export async function chatController(req: AuthRequest, res: Response) {
   try {
-    const auth = getAuth(req);
-    if (!auth.userId) {
+    const appUser = req.user;
+    if (!appUser) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -16,7 +16,7 @@ export async function chatController(req: Request, res: Response) {
     }
 
     const userQuery = rawMessage.trim();
-    const docs = await retrieveDocuments(userQuery, auth.userId, 2);
+    const docs = await retrieveDocuments(userQuery, appUser.id, 2);
     const message = await generateChatAnswer(userQuery, docs);
 
     return res.json({

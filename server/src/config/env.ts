@@ -9,10 +9,10 @@ export const config = {
   databaseUrl:
     process.env.DATABASE_URL ||
     'postgresql://pdfrag:pdfrag@localhost:5432/pdfrag',
-  clerk: {
-    secretKey: process.env.CLERK_SECRET_KEY || '',
-    publishableKey: process.env.CLERK_PUBLISHABLE_KEY || '',
-  },
+  jwtSecret: process.env.JWT_SECRET || 'secret',
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+  resendApiKey: process.env.RESEND_API_KEY || '',
+  resendFromEmail: process.env.RESEND_FROM_EMAIL || '',
   queue: {
     name: 'file-upload-queue',
   },

@@ -1,23 +1,20 @@
 import { count, desc, eq } from 'drizzle-orm';
-import { getAuth } from '@clerk/express';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
+import type { AuthRequest } from '../middleware/requireUser.js';
 import { addFileReadyJob } from '../services/queue.service.js';
 import { db } from '../db/index.js';
 import { documents } from '../db/schema.js';
-import { getOrCreateUserByClerkId } from '../services/user.service.js';
 
-export async function uploadPdfController(req: Request, res: Response) {
+export async function uploadPdfController(req: AuthRequest, res: Response) {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'PDF File is Required' });
     }
 
-    const auth = getAuth(req);
-    if (!auth.userId) {
+    const appUser = req.user;
+    if (!appUser) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-
-    const appUser = await getOrCreateUserByClerkId(auth.userId);
 
     const quotaRows = await db
       .select({ total: count() })
@@ -51,7 +48,7 @@ export async function uploadPdfController(req: Request, res: Response) {
 
     await addFileReadyJob({
       documentId,
-      ownerClerkId: auth.userId,
+      ownerId: appUser.id,
       filename: req.file.originalname,
       source: req.file.destination,
       path: req.file.path,
@@ -64,14 +61,12 @@ export async function uploadPdfController(req: Request, res: Response) {
   }
 }
 
-export async function getUserDocumentsController(req: Request, res: Response) {
+export async function getUserDocumentsController(req: AuthRequest, res: Response) {
   try {
-    const auth = getAuth(req);
-    if (!auth.userId) {
+    const appUser = req.user;
+    if (!appUser) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-
-    const appUser = await getOrCreateUserByClerkId(auth.userId);
 
     const rows = await db
       .select({
@@ -94,10 +89,10 @@ export async function getUserDocumentsController(req: Request, res: Response) {
   }
 }
 
-export async function getDocumentStatusController(req: Request, res: Response) {
+export async function getDocumentStatusController(req: AuthRequest, res: Response) {
   try {
-    const auth = getAuth(req);
-    if (!auth.userId) {
+    const appUser = req.user;
+    if (!appUser) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -109,8 +104,6 @@ export async function getDocumentStatusController(req: Request, res: Response) {
     if (!documentId) {
       return res.status(400).json({ message: 'document id is required' });
     }
-
-    const appUser = await getOrCreateUserByClerkId(auth.userId);
 
     const rows = await db
       .select({

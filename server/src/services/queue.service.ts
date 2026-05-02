@@ -3,7 +3,7 @@ import { config } from '../config/env.js';
 
 export type FileReadyPayload = {
   documentId: string;
-  ownerClerkId: string;
+  ownerId: string;
   filename: string;
   source: string;
   path: string;

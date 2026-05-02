@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 
 type FileReadyPayload = {
   documentId: string;
-  ownerClerkId: string;
+  ownerId: string;
   filename: string;
   source: string;
   path: string;
@@ -24,7 +24,7 @@ export async function fileReadyHandler(job: { data: string }) {
       ...doc,
       metadata: {
         ...(doc.metadata ?? {}),
-        ownerClerkId: data.ownerClerkId,
+        ownerId: data.ownerId,
         documentId: data.documentId,
         filename: data.filename,
       },

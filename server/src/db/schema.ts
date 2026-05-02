@@ -17,8 +17,11 @@ export const documentStatusEnum = pgEnum('document_status', [
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
-  clerkId: text('clerk_id').notNull().unique(),
-  email: text('email'),
+  email: text('email').notNull().unique(),
+  name: text('name').notNull(),
+  password: text('password').notNull(),
+  isVerified: boolean('is_verified').notNull().default(false),
+  verificationToken: text('verification_token'),
   uploadLimit: integer('upload_limit').notNull().default(2),
   isAdmin: boolean('is_admin').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true })

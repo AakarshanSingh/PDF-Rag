@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuthStore } from '../store/authStore';
 import { createApiClient } from '@/lib/api';
 import { ArrowUp, FileText, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 interface Doc {
   pageContent?: string;
@@ -116,8 +117,8 @@ const ChatComponent: React.FC = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const msgCount = messages.length;
 
-  const { getToken } = useAuth();
-  const apiClient = useMemo(() => createApiClient(getToken), [getToken]);
+  const { token } = useAuthStore();
+  const apiClient = useMemo(() => createApiClient(async () => token), [token]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -137,6 +138,7 @@ const ChatComponent: React.FC = () => {
         { role: 'assistant', content: data?.message, documents: data?.docs },
       ]);
     } catch {
+      toast.error('Something went wrong. Please try again.');
       setMessages((prev) => [
         ...prev,
         {

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useAuth, UserButton } from '@clerk/nextjs';
+import { useAuthStore } from '../store/authStore';
 import { createApiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { UploadCloud, File, CheckCircle, XCircle, Loader } from 'lucide-react';
@@ -52,8 +52,8 @@ const FileUploadComponent: React.FC = () => {
   const [uploadLimit, setUploadLimit] = React.useState<number | null>(null);
   const [documentsLoading, setDocumentsLoading] = React.useState(false);
 
-  const { getToken } = useAuth();
-  const apiClient = React.useMemo(() => createApiClient(getToken), [getToken]);
+  const { token, logout, user } = useAuthStore();
+  const apiClient = React.useMemo(() => createApiClient(async () => token), [token]);
 
   const uploadBlocked =
     uploadLimit !== null && documents.length >= uploadLimit;
@@ -281,7 +281,12 @@ const FileUploadComponent: React.FC = () => {
             Upload PDF
           </h2>
         </div>
-        <UserButton />
+        <button 
+          onClick={logout} 
+          className="text-xs font-semibold hover:text-white text-gray-400 border border-gray-800 rounded px-3 py-1 bg-[#1a1a1c]"
+        >
+          Logout
+        </button>
       </div>
 
       {/* Drop zone */}
@@ -565,22 +570,7 @@ const FileUploadComponent: React.FC = () => {
         </p>
       )}
 
-      {/* Error */}
-      {uploadStatus === 'error' && errorMsg && (
-        <div
-          style={{
-            background: '#1a0f0f',
-            border: '0.5px solid #2e1a1a',
-            borderRadius: 10,
-            padding: '10px 12px',
-            flexShrink: 0,
-          }}
-        >
-          <p style={{ fontSize: 12, color: '#f87171', margin: 0 }}>
-            {errorMsg}
-          </p>
-        </div>
-      )}
+
 
       {/* CTA */}
       <button

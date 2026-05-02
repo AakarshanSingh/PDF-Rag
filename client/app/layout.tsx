@@ -1,19 +1,11 @@
 import type { Metadata } from 'next';
-import { ClerkProvider, Show, SignUp } from '@clerk/nextjs';
-import { Montserrat, Geist_Mono } from 'next/font/google';
+import { AuthGuard } from './components/AuthGuard';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 
-const montserrat = Montserrat({
-  variable: '--font-montserrat',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
+// Using system font stacks as fallbacks to avoid build failures in restricted environments
+const montserrat = { variable: '--font-montserrat' };
+const geistMono = { variable: '--font-geist-mono' };
 
 export const metadata: Metadata = {
   title: 'PDF RAG Chat',
@@ -30,15 +22,10 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${geistMono.variable} dark bg-background text-foreground antialiased`}
       >
-        <ClerkProvider>
-          <Show when='signed-out'>
-            <main className='min-h-screen flex items-center justify-center p-6'>
-              <SignUp routing='hash' />
-            </main>
-          </Show>
-          <Show when='signed-in'>{children}</Show>
+        <AuthGuard>
+          {children}
           <Toaster richColors position='top-center' />
-        </ClerkProvider>
+        </AuthGuard>
       </body>
     </html>
   );
