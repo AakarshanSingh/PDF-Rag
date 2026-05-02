@@ -9,7 +9,6 @@ jobs:
 deploy:
 runs-on: ubuntu-latest
 
-```
 steps:
   - name: Deploy via SSH
     uses: appleboy/ssh-action@v1.0.0
@@ -21,4 +20,3 @@ steps:
         cd PDF-Rag
         sudo docker compose -f docker-compose.prod.yml down
         sudo docker compose -f docker-compose.prod.yml up -d --build
-```
