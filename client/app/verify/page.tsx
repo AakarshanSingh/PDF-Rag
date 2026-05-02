@@ -23,7 +23,7 @@ function VerifyContent() {
     const verifyToken = async () => {
       activeToastId = toast.loading('Verifying your email...');
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
         const res = await fetch(`${apiUrl}/auth/verify?token=${token}`, {
           method: 'GET',
         });

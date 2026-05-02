@@ -3,8 +3,8 @@ services:
     container_name: pdf-rag-redis
     image: redis:8-alpine
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
     volumes:
       - redis_data:/data
 
@@ -12,8 +12,8 @@ services:
     container_name: pdf-rag-qdrant
     image: qdrant/qdrant:latest
     restart: unless-stopped
-    ports:
-      - "6333:6333"
+    # ports:
+    #   - "6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
 
@@ -26,8 +26,8 @@ services:
       POSTGRES_PASSWORD: pdfrag
       POSTGRES_DB: pdfrag
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -56,10 +56,14 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile.prod
+      args:
+        - NEXT_PUBLIC_API_URL=/api
     restart: unless-stopped
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_API_URL: "/api"
+      INTERNAL_API_URL: "http://server:8000"
     ports:
       - "3000:3000"
     depends_on:
@@ -80,8 +84,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       QDRANT_URL: http://qdrant:6333
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     volumes:
       - server_uploads:/app/uploads
     depends_on:

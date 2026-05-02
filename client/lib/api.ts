@@ -52,7 +52,7 @@ export function createApiClient(getToken: GetToken): {
   getDocuments: () => Promise<DocumentsResponse>;
 } {
   const client: AxiosInstance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
   });
 
   client.interceptors.request.use(async (config) => {
