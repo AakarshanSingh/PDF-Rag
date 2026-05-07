@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { AuthGuard } from './components/AuthGuard';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
@@ -9,7 +10,8 @@ const geistMono = { variable: '--font-geist-mono' };
 
 export const metadata: Metadata = {
   title: 'PDF RAG Chat',
-  description: 'Chat with your PDF documents using Retrieval-Augmented Generation',
+  description:
+    'Chat with your PDF documents using Retrieval-Augmented Generation',
 };
 
 export default function RootLayout({
@@ -27,6 +29,12 @@ export default function RootLayout({
           <Toaster richColors position='top-center' />
         </AuthGuard>
       </body>
+      <Script
+        id='cf-analytics'
+        strategy='afterInteractive'
+        src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "6d7ad4008daa414598eada15e8d9e5b5"}'
+      />
     </html>
   );
 }
