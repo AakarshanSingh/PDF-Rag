@@ -9,7 +9,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <main className='h-[100dvh] w-screen overflow-hidden bg-[#0c0c0e] flex flex-col md:flex-row'>
+    <main className='h-dvh w-screen overflow-hidden bg-[#0c0c0e] flex flex-col md:flex-row'>
       {/* ── Mobile top bar ── */}
       <div className='flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)] border-b border-[#1a1a1d] md:hidden shrink-0'>
         <span className='text-xs font-semibold tracking-widest uppercase text-[#555]'>
